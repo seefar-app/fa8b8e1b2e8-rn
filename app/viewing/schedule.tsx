@@ -6,11 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import { useThemeColors } from '@/hooks/useColorScheme';
 import { useStore } from '@/store/useStore';
@@ -66,17 +67,31 @@ export default function ScheduleViewingScreen() {
     }
   };
 
-  const onDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(false);
-    if (date) {
+  const onDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (event.type === 'set' && date) {
       setSelectedDate(date);
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
+    } else if (event.type === 'dismissed') {
+      setShowDatePicker(false);
     }
   };
 
-  const onTimeChange = (event: any, time?: Date) => {
-    setShowTimePicker(false);
-    if (time) {
+  const onTimeChange = (event: DateTimePickerEvent, time?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    if (event.type === 'set' && time) {
       setSelectedTime(time);
+      if (Platform.OS === 'ios') {
+        setShowTimePicker(false);
+      }
+    } else if (event.type === 'dismissed') {
+      setShowTimePicker(false);
     }
   };
 
@@ -132,7 +147,10 @@ export default function ScheduleViewingScreen() {
             Select Date
           </Text>
           <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowDatePicker(true);
+            }}
             style={[styles.dateButton, { backgroundColor: colors.card }]}
           >
             <Ionicons name="calendar" size={24} color={colors.primary} />
@@ -145,9 +163,10 @@ export default function ScheduleViewingScreen() {
             <DateTimePicker
               value={selectedDate}
               mode="date"
-              display="default"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={onDateChange}
               minimumDate={new Date()}
+              textColor={colors.text}
             />
           )}
         </View>
@@ -158,7 +177,10 @@ export default function ScheduleViewingScreen() {
             Select Time
           </Text>
           <TouchableOpacity
-            onPress={() => setShowTimePicker(true)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowTimePicker(true);
+            }}
             style={[styles.dateButton, { backgroundColor: colors.card }]}
           >
             <Ionicons name="time" size={24} color={colors.primary} />
@@ -171,8 +193,9 @@ export default function ScheduleViewingScreen() {
             <DateTimePicker
               value={selectedTime}
               mode="time"
-              display="default"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={onTimeChange}
+              textColor={colors.text}
             />
           )}
         </View>
@@ -327,6 +350,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   dateButtonText: {
     flex: 1,
@@ -345,6 +373,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   timeSlotText: {
     fontSize: 14,
